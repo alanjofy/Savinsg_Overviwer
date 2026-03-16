@@ -17,6 +17,7 @@
     <div class="header-controls">
       <div class="lang-toggle">
         <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+        
         <button class="lang-btn" id="btn-de" onclick="setLang('de')">DE</button>
       </div>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
@@ -117,19 +118,17 @@
     </div>
     <div class="no-data" id="csv-loading-wf" style="display:none"></div>
     <div class="no-data" id="csv-error-wf" style="display:none"></div>
-    <div class="no-data" id="coming-soon-wf" style="display:none">
-    </div>
+    <div class="no-data" id="coming-soon-wf" style="display:none"></div>
   </div>
-
 
   <!-- CAS ROOM -->
   <div id="panel-cas_room" class="material-panel" style="display:none">
     <div class="selector-row">
       <div class="selector-panel">
         <div class="select-group">
-          <label data-i18n="label-product">Boden Type</label>
+          <label>CAS Room Type</label>
           <select id="sel-product-cr" onchange="onSelectionChange('cr')">
-            <option value="">&#8212; Select product &#8212;</option>
+            <option value="">&#8212; Select CAS Room type &#8212;</option>
           </select>
         </div>
         <div class="select-group">
@@ -153,15 +152,10 @@
     <div class="results-area" id="results-cr"><div id="results-inner-cr"></div></div>
     <div class="no-data" id="no-data-cr" style="display:none">
       <span class="big">&#11014;</span>
-      <span>Select a product and EOL scenario above to view the analysis.</span>
+      <span>Select a CAS Room type and EOL scenario above to view the analysis.</span>
     </div>
     <div class="no-data" id="csv-loading-cr" style="display:none"></div>
     <div class="no-data" id="csv-error-cr" style="display:none"></div>
-    <div class="no-data" id="coming-soon-cr">
-      <span class="big">&#127968;</span>
-      <span>CAS Room data coming soon.</span><br>
-      <small style="color:var(--text-dim); margin-top:8px; display:block">Add <code>cas_room.csv</code> to activate this section.</small>
-    </div>
   </div>
 
 </div>
