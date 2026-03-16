@@ -1,4 +1,4 @@
-// ── CONFIG ────────────────────────────────────────────────────────────────────
+// -- CONFIG --------------------------------------------------------------------
 const UNSPLASH_KEY = '7clGwldz_Ty9Xzn-UEEEBCJq59R2U__Greh--78Hrpg';
 
 const EPD_BASE = {
@@ -51,29 +51,52 @@ const EOL_INFO = {
     ],
   },
   Incineration: {
-    query:'biomass energy plant renewable electricity', label:'INCINERATION', title:'Renewable Energy Recovery',
+    query:'biomass energy plant renewable electricity', label:'INCINERATION', title:'Energy Recovery',
     color:'#f7a04a', fallback:'linear-gradient(160deg,#1f1200,#2e1e00)',
-    bullets:[{icon:'~',text:'Wood stores solar energy — released at end of life'},{icon:'*',text:'Generates Renewable electricity and District heat'}],
+    bullets:[{icon:'~',text:'Wood product been burned — product discarded'},{icon:'*',text:'Generates electricity and District heat'}],
   },
 };
 
+const CR_EOL_INFO = {
+  Reuse: {
+    query:'modular office pod refurbished architecture interior',
+    label:'REUSE', title:'A Second Life',
+    color:'#4ecca3', fallback:'linear-gradient(160deg,#0d1f1a,#122b22)',
+    bullets:[
+      {icon:'*', text:'CAS room refurbished -- no new production needed'},
+      {icon:'+', text:'All modular components reused in new configuration'},
+      {icon:'~', text:'Maximum energy and material resource savings'},
+      {icon:'~', text:'Carbon locked in materials is preserved -- no new extraction'},
+    ],
+  },
+  Recycling: {
+    query:'modular building dismantling material recycling facility',
+    label:'RECYCLING', title:'Material Recycling',
+    color:'#c8b84a', fallback:'linear-gradient(160deg,#1e2010,#2e3518)',
+    bullets:[
+      {icon:'*', text:'CAS room dismantled -- components sorted by material'},
+      {icon:'~', text:'Aluminium, glass, steel, wood & stainless steel recovered'},
+      {icon:'+', text:'Raw materials re-entered into production cycles'},
+    ],
+  },
+};
 const _photoCache = {};
 
-// ── EOL CARD ──────────────────────────────────────────────────────────────────
+// -- EOL CARD ------------------------------------------------------------------
 async function showEolCard(matKey, eol) {
   const area = document.getElementById('eol-card-area-' + matKey);
   if (!area) return;
   if (!eol) { area.style.display='none'; area.innerHTML=''; return; }
-  const info = EOL_INFO[eol]; if (!info) return;
+  const info = (matKey==='cr' && CR_EOL_INFO[eol]) ? CR_EOL_INFO[eol] : EOL_INFO[eol]; if (!info) return;
   // icons handled per-eol below
   // For wooden floors Reuse — use the richer wood/carbon bullet list
   const activeBullets = (eol==='Reuse' && matKey==='wf' && info.bulletsCarbonWood)
     ? info.bulletsCarbonWood : info.bullets;
   const eolIcons = {
-    Reuse:        ['✨','🌳','🧠','+'],
-    Recycling:    ['🏭','♻️','🔵'],
-    Incineration: ['🔥','💡','♻️'],
-    Landfilling:  ['❌','📍','⚠️'],
+    Reuse:        ['✨','&#x1F333;','&#x1F9E0;','+'],
+    Recycling:    ['&#x1F3ED;','♻️','&#x1F535;'],
+    Incineration: ['&#x1F525;','&#x1F4A1;','♻️'],
+    Landfilling:  ['❌','&#x1F4CD;','⚠️'],
   };
   const iconArr = eolIcons[eol]||[];
   area.innerHTML = `
@@ -106,11 +129,9 @@ async function showEolCard(matKey, eol) {
   } catch(err){console.warn('Unsplash fail:',err.message);}
 }
 
-// ── MATERIAL SWITCH ───────────────────────────────────────────────────────────
-function switchMaterial(key) {
-  const isCS=key==='calcium_sulphate';
-  const isWF=key==='wooden_floors';
-  const isCR=key==='cas_room';
+// -- MATERIAL SWITCH -----------------------------------------------------------
+function switchMaterial(key){
+  const isCS=key==='calcium_sulphate', isWF=key==='wooden_floors', isCR=key==='cas_room';
   document.getElementById('btn-cs').classList.toggle('active',isCS);
   document.getElementById('btn-wf').classList.toggle('active',isWF);
   document.getElementById('btn-cr').classList.toggle('active',isCR);
@@ -119,16 +140,16 @@ function switchMaterial(key) {
   document.getElementById('panel-cas_room').style.display=isCR?'block':'none';
 }
 
-// ── MATERIALS ─────────────────────────────────────────────────────────────────
+// -- MATERIALS -----------------------------------------------------------------
 const MATERIALS = {
   cs:{csvPath:'calcium_sulphate.csv',selProduct:'sel-product-cs',selEol:'sel-eol-cs',results:'results-cs',inner:'results-inner-cs',noData:'no-data-cs',loading:'csv-loading-cs',error:'csv-error-cs',comingSoon:null,data:{}},
-  wf:{csvPath:'wooden_floors.csv',selProduct:'sel-product-wf',selEol:'sel-eol-wf',results:'results-wf',inner:'results-inner-wf',noData:'no-data-wf',loading:'csv-loading-wf',error:'csv-error-wf',comingSoon:'coming-soon-wf',data:{}},
-  cr:{csvPath:'cas_room.csv',selProduct:'sel-product-cr',selEol:'sel-eol-cr',results:'results-cr',inner:'results-inner-cr',noData:'no-data-cr',loading:'csv-loading-cr',error:'csv-error-cr',comingSoon:'coming-soon-cr',data:{}},
+  wf:{csvPath:'wooden_floors.csv',selProduct:'sel-product-wf',selEol:'sel-eol-wf',results:'results-wf',inner:'results-inner-wf',noData:'no-data-wf',loading:'csv-loading-wf',error:'csv-error-wf',comingSoon:null,data:{}},
+  cr:{csvPath:'CAS.csv',selProduct:'sel-product-cr',selEol:'sel-eol-cr',results:'results-cr',inner:'results-inner-cr',noData:'no-data-cr',loading:'csv-loading-cr',error:'csv-error-cr',comingSoon:null,data:{}},
 };
 
 let _pieId=0, _renderStamp=0, _pieRegistry=[];
 
-// ── CSV PARSERS ───────────────────────────────────────────────────────────────
+// -- CSV PARSERS ---------------------------------------------------------------
 const parsePct = v=>{const s=(v||'').replace('%','').trim();return s===''?0:parseInt(s,10)||0;};
 
 function parseCSV_cs(text){
@@ -162,6 +183,29 @@ function parseCSV_wf(text){
   return parsed;
 }
 
+function parseCSV_cr(text){
+  const parsed={};
+  const pct=v=>{const x=(v||'').replace('%','').trim();return x===''?0:parseInt(x,10)||0;};
+  text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').forEach(line=>{
+    const cols=line.split(',').map(c=>c.trim());
+    const product=cols[0];
+    const eolRaw=(cols[1]||'').trim();
+    const origVal=parseFloat(cols[2]);
+    if(!product||!eolRaw||isNaN(origVal))return;
+    if(product.toLowerCase().includes('cas')||product.toLowerCase().includes('type'))return;
+    if(eolRaw.toLowerCase().includes('scenario')||eolRaw.toLowerCase().includes('energy'))return;
+    const eol=eolRaw.toLowerCase().includes('rec')?'Recycling':'Reuse';
+    if(!parsed[product])parsed[product]={refurbishedTo:'Refurbished CAS Room',scenarios:{}};
+    parsed[product].scenarios[eol]={
+      a1c4_orig:origVal, a1c4_ref:13.45,
+      energy:pct(cols[3]),
+      aluminium:pct(cols[4]), steel:pct(cols[5]),
+      wood:pct(cols[6]),      glass:pct(cols[7]),
+      stainlessSteel:pct(cols[8])
+    };
+  });
+  return parsed;
+}
 function populateSelectors(matKey){
   const m=MATERIALS[matKey];
   const selProduct=document.getElementById(m.selProduct),selEol=document.getElementById(m.selEol);
@@ -179,7 +223,7 @@ function populateSelectors(matKey){
   document.getElementById(m.noData).style.display='block';
 }
 
-// ── PIE ───────────────────────────────────────────────────────────────────────
+// -- PIE -----------------------------------------------------------------------
 function makePie(pctVal,color){
   const id='pie-'+_renderStamp+'-'+(_pieId++);
   // r=54 gives a good ring. stroke-width=13 is balanced.
@@ -271,7 +315,7 @@ function pieItem(pct,color,label,sub){
   return `<div class="pie-item">${makePie(pct,color)}<div class="pie-label-block"><span class="pie-label" style="color:${color}">${label}</span><span class="pie-sublabel">${sub}</span></div></div>`;
 }
 
-// ── MATH TOOLTIP ─────────────────────────────────────────────────────────────
+// -- MATH TOOLTIP -------------------------------------------------------------
 function mathTooltip(key){
   const info=MATH_INFO[key]; if(!info)return '';
   return `<button class="math-btn" onclick="toggleMath('math-${key}')" title="Show formula">f</button>
@@ -282,7 +326,7 @@ function mathTooltip(key){
 }
 function toggleMath(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
-// ── SAVINGS CARDS ─────────────────────────────────────────────────────────────
+// -- SAVINGS CARDS -------------------------------------------------------------
 function renderSavingsCS(sc){
   const energyAvg=Math.round((sc.electricity+sc.thermal)/2);
   const gypsumAvg=Math.round((sc.alpha+sc.beta)/2);
@@ -313,7 +357,7 @@ function renderSavingsWF(sc,product){
         ${pieItem(sc.treeSavings,'#4ecca3','Wood Savings','% virgin wood avoided')}
         ${isST?`<div class="pie-divider"></div>${pieItem(sc.steelSavings,'#a8edcc','Steel Savings','% steel avoided')}`:''}
       </div></div>`:''}
-    ${hasRecovery?`<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#128293;</div><div class="savings-card-title-block"><div class="savings-card-title">Energy Recovery</div><div class="savings-card-desc">Renewable energy from incineration.</div></div></div>
+    ${hasRecovery?`<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#128293;</div><div class="savings-card-title-block"><div class="savings-card-title">Energy Recovery</div><div class="savings-card-desc">Energy from incineration.</div></div></div>
       <div class="savings-card-body">
         ${pieItem(sc.recoveryElec,'#f7a04a','Electricity','% recovered')}
         <div class="pie-divider"></div>
@@ -322,7 +366,34 @@ function renderSavingsWF(sc,product){
   </div>`;
 }
 
-// ── ABSOLUTE IMPACT ───────────────────────────────────────────────────────────
+function renderSavingsCR(sc){
+  const hasEnergy=sc.energy>0;
+  const resources=[];
+  if(sc.aluminium>0) resources.push({pct:sc.aluminium,color:'#a8c5da',label:'Aluminium',sub:'% recovered'});
+  if(sc.steel>0)     resources.push({pct:sc.steel,    color:'#7b9ee8',label:'Steel',    sub:'% recovered'});
+  if(sc.wood>0)      resources.push({pct:sc.wood,     color:'#4ecca3',label:'Wood',     sub:'% recovered'});
+  if(sc.glass>0)     resources.push({pct:sc.glass,    color:'#a8edcc',label:'Glass',    sub:'% recovered'});
+  if(sc.stainlessSteel>0) resources.push({pct:sc.stainlessSteel,color:'#e0b87a',label:'Stainless Steel',sub:'% recovered'});
+  const cards=[];
+  if(hasEnergy) cards.push(
+    '<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#9889;</div>' +
+    '<div class="savings-card-title-block"><div class="savings-card-title">Energy Savings</div>' +
+    '<div class="savings-card-desc">Manufacturing energy avoided vs. new production.</div></div></div>' +
+    '<div class="savings-card-body">' + pieItem(sc.energy,'#f7c873','Energy Savings','% vs. new production') + '</div></div>'
+  );
+  if(resources.length>0){
+    const ringsHtml=resources.map((r,i)=>(i>0?'<div class="pie-divider"></div>':'')+pieItem(r.pct,r.color,r.label,r.sub)).join('');
+    cards.push(
+      '<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#9851;</div>' +
+      '<div class="savings-card-title-block"><div class="savings-card-title">Material Recovery</div>' +
+      '<div class="savings-card-desc">Aluminium, steel, wood, glass and stainless steel recovered.</div></div></div>' +
+      '<div class="savings-card-body">' + ringsHtml + '</div></div>'
+    );
+  }
+  const gridClass=cards.length===1?'savings-1col':'savings-2col';
+  return '<div class="savings-grid-outer '+gridClass+' anim anim-d3">'+cards.join('')+'</div>';
+}
+// -- ABSOLUTE IMPACT -----------------------------------------------------------
 function absStatCard(icon,value,unit,label,color,mathKey){
   return `<div class="abs-stat-card">
     <div class="abs-stat-header"><div class="abs-stat-icon">${icon}</div>${mathKey?mathTooltip(mathKey):''}</div>
@@ -335,13 +406,13 @@ function absStatCard(icon,value,unit,label,color,mathKey){
 function renderAbsoluteCS(product,sc,m2){
   const base=EPD_BASE.cs[product]||EPD_BASE.cs['FLOOR and more'];
   const cards=[];
-  if(sc.a1c4_ref>0){const co2=(sc.a1c4_orig-sc.a1c4_ref)*m2;if(co2>0)cards.push(absStatCard('🌿',fmt(co2),'kg CO2 avoided','Carbon footprint avoided vs. new production','#4ecca3','co2_cs_reuse'));}
+  if(sc.a1c4_ref>0){const co2=(sc.a1c4_orig-sc.a1c4_ref)*m2;if(co2>0)cards.push(absStatCard('&#x1F33F;',fmt(co2),'kg CO2 avoided','Carbon footprint avoided vs. new production','#4ecca3','co2_cs_reuse'));}
   const elecS=(sc.electricity/100)*base.elec*m2,thermalS=(sc.thermal/100)*base.thermal*m2,energyS=elecS+thermalS;
   if(energyS>0)cards.push(absStatCard('⚡',fmt(energyS),'kWh saved','Electricity + thermal energy avoided','#f7c873','energy_cs'));
   const waterS=(sc.water/100)*base.water*m2;
-  if(waterS>0)cards.push(absStatCard('💧',fmt(waterS),'litres saved','Freshwater consumption avoided','#7b9ee8','water_cs'));
+  if(waterS>0)cards.push(absStatCard('&#x1F4A7;',fmt(waterS),'litres saved','Freshwater consumption avoided','#7b9ee8','water_cs'));
   const gypsumS=((sc.alpha/100)*base.alpha+(sc.beta/100)*base.beta)*m2;
-  if(gypsumS>0)cards.push(absStatCard('🪨',fmt(gypsumS),'kg gypsum saved','Virgin gypsum extraction avoided','#a8edcc','gypsum_cs'));
+  if(gypsumS>0)cards.push(absStatCard('&#x1FAA8;',fmt(gypsumS),'kg gypsum saved','Virgin gypsum extraction avoided','#a8edcc','gypsum_cs'));
   if(!cards.length)return '';
   return `<div class="abs-section anim anim-d4">
     <div class="section-label">Project Impact</div>
@@ -360,16 +431,16 @@ function renderAbsoluteWF(product,sc,eol,m2){
   const base=EPD_BASE.wf[product]||EPD_BASE.wf['LIGNA'];
   const cards=[];
   if(eol==='Reuse'){
-    if(sc.a1c4_ref>0){const co2=(sc.a1c4_orig-sc.a1c4_ref)*m2;if(co2>0)cards.push(absStatCard('🌿',fmt(co2),'kg CO2 avoided','Carbon footprint avoided','#4ecca3','co2_wf_reuse'));}
+    if(sc.a1c4_ref>0){const co2=(sc.a1c4_orig-sc.a1c4_ref)*m2;if(co2>0)cards.push(absStatCard('&#x1F33F;',fmt(co2),'kg CO2 avoided','Carbon footprint avoided','#4ecca3','co2_wf_reuse'));}
     const woodS=(sc.treeSavings/100)*base.virginWood*m2;
-    if(woodS>0)cards.push(absStatCard('🌳',fmt(woodS),'kg wood saved','Virgin Wood extraction avoided','#a8edcc','wood_wf'));
+    if(woodS>0)cards.push(absStatCard('&#x1F333;',fmt(woodS),'kg wood saved','Virgin Wood extraction avoided','#a8edcc','wood_wf'));
     const energyS=(sc.electricity/100)*base.energy*m2;
     if(energyS>0)cards.push(absStatCard('⚡',fmt(energyS),'kWh saved','Manufacturing energy avoided','#f7c873','energy_wf_reuse'));
   } else {
     const inc=base.incinerationBase;
     const elecG=(sc.recoveryElec/100)*inc*m2,thermalG=(sc.recoveryThermal/100)*inc*m2;
-    if(elecG>0)cards.push(absStatCard('💡',fmt(elecG),'kWh electricity','Renewable electricity generated','#f7a04a','elec_recovery'));
-    if(thermalG>0)cards.push(absStatCard('🔥',fmt(thermalG),'kWh heat','Thermal energy recovered','#e06b75','thermal_recovery'));
+    if(elecG>0)cards.push(absStatCard('&#x1F4A1;',fmt(elecG),'kWh electricity','Electricity generated','#f7a04a','elec_recovery'));
+    if(thermalG>0)cards.push(absStatCard('&#x1F525;',fmt(thermalG),'kWh heat','Thermal energy recovered','#e06b75','thermal_recovery'));
   }
   if(!cards.length)return '';
   const bannerText = eol==='Reuse'
@@ -388,6 +459,25 @@ function renderAbsoluteWF(product,sc,eol,m2){
   </div>`;
 }
 
+function renderAbsoluteCR(product,sc,eol,m2){
+  const cards=[];
+  if(eol==='Reuse'){
+    const co2=sc.a1c4_orig*m2;
+    if(co2>0)cards.push(absStatCard('&#127807;',fmt(co2),'kg CO2 avoided','Full carbon footprint avoided -- CAS room fully reused','#4ecca3',null));
+  }
+  if(!cards.length)return '';
+  return `<div class="abs-section anim anim-d4">
+    <div class="section-label">Project Impact</div>
+    <div class="abs-impact-banner">
+      <div class="abs-impact-banner-icon">&#127881;</div>
+      <div class="abs-impact-banner-text">
+        <strong>Total Impact for ${fmt(m2,0)} m&#178;</strong>
+        <span>${eol==='Reuse'?'Full CO2 savings -- CAS Room fully reused, no new production':'Material recovery savings'}</span>
+      </div>
+    </div>
+    <div class="abs-grid">${cards.join('')}</div>
+  </div>`;
+}
 function updateAbsoluteSingle(matKey,product,eol){
   const input=document.getElementById('mlinput-'+matKey);
   const absEl=document.getElementById('mlabs-'+matKey);
@@ -395,7 +485,7 @@ function updateAbsoluteSingle(matKey,product,eol){
   const m2=parseFloat(input.value);
   if(!m2||m2<=0){absEl.innerHTML='';return;}
   const sc=MATERIALS[matKey].data[product].scenarios[eol];
-  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):renderAbsoluteWF(product,sc,eol,m2);
+  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):matKey==='cr'?renderAbsoluteCR(product,sc,eol,m2):renderAbsoluteWF(product,sc,eol,m2);
 }
 
 function updateAbsoluteCompare(matKey,product,eol,side){
@@ -405,7 +495,7 @@ function updateAbsoluteCompare(matKey,product,eol,side){
   const m2=parseFloat(input.value);
   if(!m2||m2<=0){absEl.innerHTML='';return;}
   const sc=MATERIALS[matKey].data[product].scenarios[eol];
-  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):renderAbsoluteWF(product,sc,eol,m2);
+  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):matKey==='cr'?renderAbsoluteCR(product,sc,eol,m2):renderAbsoluteWF(product,sc,eol,m2);
 }
 
 // Legacy alias for PDF export compatibility
@@ -413,7 +503,7 @@ function updateAbsolute(matKey,product,eol){
   updateAbsoluteSingle(matKey,product,eol);
 }
 
-// ── PROJECT AREA INPUT ───────────────────────────────────────────────────────
+// -- PROJECT AREA INPUT -------------------------------------------------------
 function m2CardHtml(inputId, absId, product, eol, onInputCall) {
   const eolInfo = EOL_INFO[eol] || {};
   const eolColor = eolInfo.color || 'var(--accent)';
@@ -453,7 +543,7 @@ function makeM2InputCompare(matKey,product,eol,side){
   );
 }
 
-// ── RENDER — returns structured sections for single OR compare view ────────────
+// -- RENDER — returns structured sections for single OR compare view ------------
 function buildSections(matKey,product,eol,stamp){
   const m=MATERIALS[matKey],pd=m.data[product],sc=pd.scenarios[eol];
   const refName=pd.refurbishedTo,isReuse=eol==='Reuse';
@@ -461,7 +551,7 @@ function buildSections(matKey,product,eol,stamp){
 
   if(isReuse){
     const reduction=co2Reduction(sc.a1c4_orig,sc.a1c4_ref);
-    a1c4Html=''; // Values shown in donut legend — no need to repeat in cards above
+    a1c4Html='';
     contextHtml=`
       <div class="co2-donut-wrap">
         <div class="donut-center">
@@ -481,7 +571,7 @@ function buildSections(matKey,product,eol,stamp){
             <div>
               <div class="legend-item-label">Original</div>
               <div class="legend-item-name">${product}</div>
-              <div class="legend-item-val" style="color:#e06b75">${sc.a1c4_orig.toFixed(2)} <span class="legend-unit">kg CO&#8322;/m&#178;</span></div>
+              <div class="legend-item-val" style="color:#e06b75">${sc.a1c4_orig.toFixed(2)} <span class="legend-unit">${matKey==='cr'?'kg CO&#8322; / CAS room':'kg CO&#8322;/m&#178;'}</span></div>
             </div>
           </div>
           <div class="legend-item">
@@ -489,7 +579,7 @@ function buildSections(matKey,product,eol,stamp){
             <div>
               <div class="legend-item-label">Refurbished To</div>
               <div class="legend-item-name">${refName}</div>
-              <div class="legend-item-val" style="color:#4ecca3">${sc.a1c4_ref.toFixed(2)} <span class="legend-unit">kg CO&#8322;/m&#178;</span></div>
+              <div class="legend-item-val" style="color:#4ecca3">${sc.a1c4_ref.toFixed(2)} <span class="legend-unit">${matKey==='cr'?'kg CO&#8322; / CAS room':'kg CO&#8322;/m&#178;'}</span></div>
             </div>
           </div>
 
@@ -501,18 +591,20 @@ function buildSections(matKey,product,eol,stamp){
     const hlBg=isInc?'rgba(247,160,74,0.05)':eol==='Recycling'?'rgba(200,184,74,0.04)':'rgba(139,148,158,0.04)';
     const hlIcon=isInc?'&#128293;':eol==='Recycling'?'&#9851;':'&#9888;';
     const hlTitle=isInc
-      ?`<div class="ctx-title" style="color:#f7a04a">&#9889; Renewable Energy Recovery</div>`
+      ?`<div class="ctx-title" style="color:#f7a04a">&#9889; Energy Recovery</div>`
       :eol==='Recycling'
       ?`<div class="ctx-title" style="color:#c8b84a">&#9851; Material Recycling</div>`
       :`<div class="ctx-title" style="color:#e06b75">&#9888; Landfilling</div>`;
     const hlText=isInc
-      ?`<span class="ctx-product">${product}</span> is <span class="ctx-action" style="color:#f7a04a;font-weight:700">incinerated</span> at end of life.<br><span class="ctx-benefit" style="color:#f7c873">&#10003; Generates Renewable electricity &amp; District heat</span>`
+      ?`<span class="ctx-product">${product}</span> is <span class="ctx-action" style="color:#f7a04a;font-weight:700">incinerated</span> at end of life.<br><span class="ctx-benefit" style="color:#f7c873">&#10003; Generates Electricity &amp; District heat</span>`
       :eol==='Recycling'
-      ?`<span class="ctx-product">${product}</span> is <span class="ctx-action" style="color:#c8b84a;font-weight:700">recycled</span>.<br><span class="ctx-benefit" style="color:#c8b84a">&#10003; Raw gypsum recovered &amp; re-entered into production</span>`
+      ?(matKey==='cr'
+        ?`<span class="ctx-product">${product}</span> CAS room is <span class="ctx-action" style="color:#c8b84a;font-weight:700">recycled</span>.<br><span class="ctx-benefit" style="color:#c8b84a">&#10003; Aluminium, steel, wood, glass &amp; stainless steel recovered and re-entered into production</span>`
+        :`<span class="ctx-product">${product}</span> is <span class="ctx-action" style="color:#c8b84a;font-weight:700">recycled</span>.<br><span class="ctx-benefit" style="color:#c8b84a">&#10003; Raw gypsum recovered &amp; re-entered into production</span>`)
       :`<span class="ctx-product">${product}</span> is <span class="ctx-action" style="color:#e06b75;font-weight:700">sent to landfill</span>.<br><span class="ctx-warn">&#10007; No material or energy is recovered</span>`;
     a1c4Html=`
       <div class="a1c4-grid" style="grid-template-columns:1fr">
-        <div class="a1c4-card original"><div class="card-tag">Original Boden</div><div class="product-name">${product}</div><div class="co2-value">${sc.a1c4_orig.toFixed(2)}</div><div class="co2-unit">kg CO&#8322; eq. / m&#178;</div></div>
+        <div class="a1c4-card original"><div class="card-tag">${matKey==='cr'?'Original CAS Room':'Original Boden'}</div><div class="product-name">${product}</div><div class="co2-value">${sc.a1c4_orig.toFixed(2)}</div><div class="co2-unit">kg CO&#8322; eq. ${matKey==='cr'?'/ CAS room':'/ m&#178;'}</div></div>
       </div>`;
     contextHtml=`
       <div class="loop-highlight" style="border-color:${hlColor};background:${hlBg};margin-bottom:0">
@@ -521,14 +613,14 @@ function buildSections(matKey,product,eol,stamp){
       </div>`;
   }
 
-  const savingsHtml=matKey==='cs'?renderSavingsCS(sc):renderSavingsWF(sc,product);
+  const savingsHtml=matKey==='cs'?renderSavingsCS(sc):matKey==='cr'?renderSavingsCR(sc):renderSavingsWF(sc,product);
   return {a1c4Html,contextHtml,savingsHtml,sc,isReuse,reduction:isReuse?co2Reduction(sc.a1c4_orig,sc.a1c4_ref):0};
 }
 
 function render(matKey,product,eol){
   const stamp=_renderStamp;
   const {a1c4Html,contextHtml,savingsHtml}=buildSections(matKey,product,eol,stamp);
-  const m2Html=makeM2Input(matKey,product,eol);
+  const m2Html=matKey==='cr'?'':makeM2Input(matKey,product,eol);
   return `
     <div class="section-label anim anim-d1">A1 &#8211; C4 Carbon Footprint</div>
     ${a1c4Html}${contextHtml}
@@ -537,7 +629,7 @@ function render(matKey,product,eol){
     ${savingsHtml}${m2Html}`;
 }
 
-// ── COMPARE — row-by-row banded layout ────────────────────────────────────────
+// -- COMPARE — row-by-row banded layout ----------------------------------------
 function renderCompare(matKey,product,eolA,eolB){
   const stampA=_renderStamp, stampB=_renderStamp+1;
   const sA=buildSections(matKey,product,eolA,stampA);
@@ -574,15 +666,15 @@ function renderCompare(matKey,product,eolA,eolB){
     </div>
     <hr class="divider">
     <!-- ROW: Separate Project Impact per scenario -->
-    <div class="section-label anim anim-d5">Project Impact</div>
+    ${matKey!=='cr'?`<div class="section-label anim anim-d5">Project Impact</div>
     <div class="cmp-row">
       <div class="cmp-cell">${makeM2InputCompare(matKey,product,eolA,'a')}</div>
       <div class="cmp-divider"></div>
       <div class="cmp-cell">${makeM2InputCompare(matKey,product,eolB,'b')}</div>
-    </div>`;
+    </div>`:''}`;
 }
 
-// ── SELECTION CHANGE ──────────────────────────────────────────────────────────
+// -- SELECTION CHANGE ----------------------------------------------------------
 function onSelectionChange(matKey){
   const m=MATERIALS[matKey];
   const product=document.getElementById(m.selProduct).value;
@@ -619,14 +711,48 @@ function onSelectionChange(matKey){
   if(_compareActive[matKey])populateCompareSelector(matKey);
 }
 
-// ── INLINE CSV DATA ─────────────────────────────────────────────────────────
-const INLINE_CSV = {
-  cs: ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,Water Savings,Resource Savings,\nCalcium sulphate,,,,,,Electrcity,Thermal,Water Savings,alpha gypsum,beta gypsum\n,NORTEC,Reuse,14.6,LOOP,3.41,93%,100%,100%,80%,90%\n,NORTEC,Recycling,16.8,,4.1,0%,0%,0%,14%,56%\n,NORTEC,Landfilling,13.1,,3.36,0%,0%,0%,0%,0%\n,,,,,,,,,,\n,,,,,,,,,,\n,,,,,,,,,,\n,FLOOR and more,Reuse,16.7,ADDLIFE,3.41,90%,100%,100%,100%,100%\n,FLOOR and more,Recycling,18.73,,3.75,0%,0%,0%,14%,56%\n,FLOOR and more,Landfilling,17.23,,3.13,0%,0%,0%,0%,0%\n,,,,,,,,,,\n,,,,,,,,,,\n,NORIT,Landfilling,17.23,,3.13,0%,0%,0%,0%,0%",
-  wf: ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,resource savings ,,Energy recovery,\nWooden floors,,,,,,Electrcity,Thermal,Tree Savings,Steel savings,Electrcity,Thermal\n,LIGNA,Reuse,5.14,RELIFE ,1.02,100%,0%,50%,0%,0%,0%\n,LIGNA,Incineration,5.49,,2.28,0%,0%,0%,0%,25%,35%\n,,,,,,,,,,,\n,,,,,,,,,,,\n,,,,,,,,,,,\n,LIGNA ST,Reuse,13.83,RELIFE ST,0.68,100%,0%,50%,17%,0%,0%\n,LIGNA ST,Incineration,17.4,,5.03,0%,0%,0%,0%,25%,35%",
-  cr: ""
-};
+// -- INLINE CSV DATA ---------------------------------------------------------
 
-// ── LOAD CSV ──────────────────────────────────────────────────────────────────
+// INLINE CSV DATA
+const INLINE_CSV = {
+  cs: [
+    ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,Water Savings,Resource Savings,",
+    "Calcium sulphate,,,,,,Electrcity,Thermal,Water Savings,alpha gypsum,beta gypsum",
+    ",NORTEC,Reuse,14.6,LOOP,3.41,93%,100%,100%,95%,90%",
+    ",NORTEC,Recycling,16.8,,4.1,0%,0%,0%,14%,56%",
+    ",NORTEC,Landfilling,13.1,,3.36,0%,0%,0%,0%,0%",
+    ",,,,,,,,,,",
+    ",,,,,,,,,,",
+    ",,,,,,,,,,",
+    ",FLOOR and more,Reuse,16.7,ADDLIFE,3.41,90%,100%,100%,95%,85%",
+    ",FLOOR and more,Recycling,18.73,,3.75,0%,0%,0%,14%,56%",
+    ",FLOOR and more,Landfilling,17.23,,3.13,0%,0%,0%,0%,0%",
+    ",,,,,,,,,,",
+    ",,,,,,,,,,",
+
+  ],
+  wf: [
+    ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,resource savings ,,Energy recovery,",
+    "Wooden floors,,,,,,Electrcity,Thermal,Tree Savings,Steel savings,Electrcity,Thermal",
+    ",LIGNA,Reuse,5.14,RELIFE ,1.02,100%,0%,50%,0%,0%,0%",
+    ",LIGNA,Incineration,5.49,,2.28,0%,0%,0%,0%,25%,35%",
+    ",,,,,,,,,,,",
+    ",,,,,,,,,,,",
+    ",,,,,,,,,,,",
+    ",LIGNA ST,Reuse,13.83,RELIFE ST,0.68,100%,0%,50%,99%,0%,0%",
+    ",LIGNA ST,Incineration,17.4,,5.03,0%,0%,0%,0%,25%,35%"
+  ],
+  cr: [
+    "CAS room Type,Scenario  ,A1-C4,Energy savings,Aluminium,Steel,Wood,Glass,Stainless Steel",
+    "3400x4000,Recyling ,3729.17,0%,40%,50%,40%,50%,50%",
+    "2400x2400,Recyling ,2197.29,0%,40%,50%,40%,50%,50%",
+    "1200x2000,Recyling ,1457.87,0%,40%,50%,40%,50%,50%",
+    "3400x4000,Reuse,3692.24,98%,99%,98%,99%,98%,99%",
+    "2400x2400,Reuse,2175.57,98%,99%,98%,99%,98%,99%",
+    "1200x2000,Reuse,1444.23,98%,99%,98%,99%,98%,99%",
+  ]
+};
+// -- LOAD CSV ------------------------------------------------------------------
 async function fetchCSV(paths){
   for(const path of paths){
     try{const res=await fetch(path);if(res.ok)return await res.text();}catch(_){}
@@ -646,13 +772,7 @@ function loadCSV(matKey){
     const text=INLINE_CSV[matKey];
     if(!text)throw new Error('No inline data for '+matKey);
     m.data=matKey==='cs'?parseCSV_cs(text):parseCSV_wf(text);
-    if(Object.keys(m.data).length===0){
-      // No data — show coming soon if available, otherwise show no-data
-      const csEl2=m.comingSoon?document.getElementById(m.comingSoon):null;
-      if(csEl2)csEl2.style.display='block';
-      else if(noDataEl)noDataEl.style.display='block';
-      return;
-    }
+    if(Object.keys(m.data).length===0)throw new Error('No rows parsed.');
     populateSelectors(matKey);
     if(noDataEl)noDataEl.style.display='block';
     if(errorEl)errorEl.style.display='none';
@@ -666,23 +786,23 @@ function loadCSV(matKey){
 }
 window.addEventListener('DOMContentLoaded',()=>{loadCSV('cs');loadCSV('wf');loadCSV('cr');});
 
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 // THEME
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 function toggleTheme(){
   const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const next=isDark?'light':'dark';
   document.documentElement.setAttribute('data-theme',next);
-  document.getElementById('theme-icon').textContent=next==='dark'?'☀️':'🌙';
+  document.getElementById('theme-icon').textContent=next==='dark'?'☀️':'&#x1F319;';
   try{localStorage.setItem('bo-theme',next);}catch(_){}
 }
 (function initTheme(){
-  try{const s=localStorage.getItem('bo-theme');if(s){document.documentElement.setAttribute('data-theme',s);const i=document.getElementById('theme-icon');if(i)i.textContent=s==='dark'?'☀️':'🌙';}}catch(_){}
+  try{const s=localStorage.getItem('bo-theme');if(s){document.documentElement.setAttribute('data-theme',s);const i=document.getElementById('theme-icon');if(i)i.textContent=s==='dark'?'☀️':'&#x1F319;';}}catch(_){}
 })();
 
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 // LANGUAGE
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 const I18N={
   en:{'eyebrow':'Lifecycle Data','mat-cs':'Calcium Sulphate Floors','mat-wf':'Wooden Floors','mat-cr':'CAS Room','label-product':'Boden Type','label-eol':'EOL Scenario','label-compare-eol':'Compare with EOL','sel-product-placeholder':'— Select product —','sel-eol-placeholder':'— Select EOL scenario —','sel-compare-placeholder':'— Select scenario to compare —','no-data':'Select a Boden type and EOL scenario to view the analysis.','loading-cs':'Loading calcium sulphate data…','coming-soon':'Wooden Floors data coming soon.','btn-compare':'⇄ Compare Scenarios','btn-export':'Export PDF'},
   de:{'eyebrow':'Lebenszyklus-Daten','mat-cs':'Calciumsulfatböden','mat-wf':'Holzböden','mat-cr':'CAS Raum','label-product':'Bodentyp','label-eol':'EOL-Szenario','label-compare-eol':'Vergleich mit EOL','sel-product-placeholder':'— Produkt wählen —','sel-eol-placeholder':'— EOL-Szenario wählen —','sel-compare-placeholder':'— Vergleichsszenario wählen —','no-data':'Wählen Sie Bodentyp und EOL-Szenario.','loading-cs':'Daten werden geladen…','coming-soon':'Holzboden-Daten demnächst verfügbar.','btn-compare':'⇄ Szenarien vergleichen','btn-export':'PDF exportieren'},
@@ -693,15 +813,15 @@ function setLang(lang){
   document.getElementById('btn-en').classList.toggle('active',lang==='en');
   document.getElementById('btn-de').classList.toggle('active',lang==='de');
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[lang][k])el.textContent=I18N[lang][k];});
-  ['cs','wf'].forEach(mk=>{const m=MATERIALS[mk];const p=document.getElementById(m.selProduct).value,e=document.getElementById(m.selEol).value;if(p&&e)onSelectionChange(mk);});
+  ['cs','wf','cr'].forEach(mk=>{const m=MATERIALS[mk];const p=document.getElementById(m.selProduct).value,e=document.getElementById(m.selEol).value;if(p&&e)onSelectionChange(mk);});
   try{localStorage.setItem('bo-lang',lang);}catch(_){}
 }
 (function initLang(){try{const s=localStorage.getItem('bo-lang');if(s&&I18N[s]){_lang=s;setLang(s);}}catch(_){}})();
 
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 // COMPARE
-// ════════════════════════════════════════════════════════════
-const _compareActive={cs:false,wf:false};
+// ------------------------------------------------------------
+const _compareActive={cs:false,wf:false,cr:false};
 
 function toggleCompare(matKey){
   const btn=document.getElementById('compare-btn-'+matKey);
@@ -743,9 +863,9 @@ function onCompareChange(matKey){
   onSelectionChange(matKey);
 }
 
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 // EXPORT PDF — clean structured report, no screenshot
-// ════════════════════════════════════════════════════════════
+// ------------------------------------------------------------
 function showExportBar(){
   const btn=document.getElementById('export-btn-header');
   if(btn)btn.style.display='flex';
@@ -833,6 +953,27 @@ async function exportPDF(){
     btn.style.opacity='';
     btn.style.pointerEvents='';
     btn.style.visibility='';
+  }
+}
+
+function loadCSV(matKey){
+  const m=MATERIALS[matKey];
+  const loadingEl=document.getElementById(m.loading);
+  const errorEl=document.getElementById(m.error);
+  const noDataEl=document.getElementById(m.noData);
+  if(loadingEl)loadingEl.style.display='none';
+  try{
+    const raw=INLINE_CSV[matKey];
+    if(!raw)throw new Error('No data for '+matKey);
+    const text=Array.isArray(raw)?raw.join('\n'):raw;
+    m.data=matKey==='cs'?parseCSV_cs(text):matKey==='cr'?parseCSV_cr(text):parseCSV_wf(text);
+    if(Object.keys(m.data).length===0)throw new Error('No rows parsed for '+matKey);
+    populateSelectors(matKey);
+    if(noDataEl)noDataEl.style.display='block';
+    if(errorEl)errorEl.style.display='none';
+  }catch(err){
+    if(errorEl){errorEl.style.display='block';errorEl.innerHTML='<b>Error:</b> '+err.message;}
+    console.error('loadCSV',matKey,err);
   }
 }
 
