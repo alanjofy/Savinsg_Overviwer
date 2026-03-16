@@ -107,8 +107,10 @@ async function showEolCard(matKey, eol) {
 }
 
 // ── MATERIAL SWITCH ───────────────────────────────────────────────────────────
-function switchMaterial(key){
-  const isCS=key==='calcium_sulphate', isWF=key==='wooden_floors', isCR=key==='cas_room';
+function switchMaterial(key) {
+  const isCS=key==='calcium_sulphate';
+  const isWF=key==='wooden_floors';
+  const isCR=key==='cas_room';
   document.getElementById('btn-cs').classList.toggle('active',isCS);
   document.getElementById('btn-wf').classList.toggle('active',isWF);
   document.getElementById('btn-cr').classList.toggle('active',isCR);
@@ -120,8 +122,8 @@ function switchMaterial(key){
 // ── MATERIALS ─────────────────────────────────────────────────────────────────
 const MATERIALS = {
   cs:{csvPath:'calcium_sulphate.csv',selProduct:'sel-product-cs',selEol:'sel-eol-cs',results:'results-cs',inner:'results-inner-cs',noData:'no-data-cs',loading:'csv-loading-cs',error:'csv-error-cs',comingSoon:null,data:{}},
-  wf:{csvPath:'wooden_floors.csv',selProduct:'sel-product-wf',selEol:'sel-eol-wf',results:'results-wf',inner:'results-inner-wf',noData:'no-data-wf',loading:'csv-loading-wf',error:'csv-error-wf',comingSoon:null,data:{}},
-  cr:{csvPath:'cas_room.csv',selProduct:'sel-product-cr',selEol:'sel-eol-cr',results:'results-cr',inner:'results-inner-cr',noData:'no-data-cr',loading:'csv-loading-cr',error:'csv-error-cr',comingSoon:null,data:{}},
+  wf:{csvPath:'wooden_floors.csv',selProduct:'sel-product-wf',selEol:'sel-eol-wf',results:'results-wf',inner:'results-inner-wf',noData:'no-data-wf',loading:'csv-loading-wf',error:'csv-error-wf',comingSoon:'coming-soon-wf',data:{}},
+  cr:{csvPath:'cas_room.csv',selProduct:'sel-product-cr',selEol:'sel-eol-cr',results:'results-cr',inner:'results-inner-cr',noData:'no-data-cr',loading:'csv-loading-cr',error:'csv-error-cr',comingSoon:'coming-soon-cr',data:{}},
 };
 
 let _pieId=0, _renderStamp=0, _pieRegistry=[];
@@ -144,27 +146,18 @@ function parseCSV_cs(text){
   return parsed;
 }
 
-function parseCSV_cr(text){
+function parseCSV_wf(text){
   const parsed={};
-  const parsePct=v=>{const s2=(v||'').replace('%','').trim();return s2===''?0:parseInt(s2,10)||0;};
-  text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').map(r=>r.split(',').map(c=>c.trim())).forEach(cols=>{
-    const product=cols[0], eolRaw=cols[1], origVal=parseFloat(cols[2]);
-    if(!product||!eolRaw||isNaN(origVal))return;
+  text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/^\uFEFF/,'').split('\n').map(r=>r.split(',').map(c=>c.trim())).forEach(cols=>{
+    const product=cols[1],eol=cols[2],origVal=parseFloat(cols[3]);
+    if(!product||!eol||isNaN(origVal))return;
     const pl=product.toLowerCase();
-    if(pl.includes('cas room')||pl.includes('type')||pl==='')return;
-    if(eolRaw.toLowerCase().includes('scenario')||eolRaw.toLowerCase().includes('energy'))return;
-    const eol=eolRaw.toLowerCase().includes('rec')?'Recycling':'Reuse';
-    if(!parsed[product])parsed[product]={refurbishedTo:'Refurbished CAS',scenarios:{}};
-    parsed[product].scenarios[eol]={
-      a1c4_orig:origVal,
-      a1c4_ref:0,
-      energy:parsePct(cols[3]),
-      aluminium:parsePct(cols[4]),
-      steel:parsePct(cols[5]),
-      wood:parsePct(cols[6]),
-      glass:parsePct(cols[7]),
-      stainlessSteel:parsePct(cols[8])
-    };
+    if(pl.includes('wooden')||pl.includes('boden')||eol.toLowerCase()==='eol')return;
+    if(!parsed[product])parsed[product]={refurbishedTo:'',scenarios:{}};
+    if(cols[4])parsed[product].refurbishedTo=cols[4].trim();
+    parsed[product].scenarios[eol]={a1c4_orig:origVal,a1c4_ref:eol==='Reuse'?(parseFloat(cols[5])||0):0,
+      electricity:parsePct(cols[6]),thermal:parsePct(cols[7]),treeSavings:parsePct(cols[8]),steelSavings:parsePct(cols[9]),
+      recoveryElec:parsePct(cols[10]),recoveryThermal:parsePct(cols[11])};
   });
   return parsed;
 }
@@ -290,8 +283,6 @@ function mathTooltip(key){
 function toggleMath(id){const el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
 // ── SAVINGS CARDS ─────────────────────────────────────────────────────────────
-
-
 function renderSavingsCS(sc){
   const energyAvg=Math.round((sc.electricity+sc.thermal)/2);
   const gypsumAvg=Math.round((sc.alpha+sc.beta)/2);
@@ -329,39 +320,6 @@ function renderSavingsWF(sc,product){
         ${pieItem(sc.recoveryThermal,'#e06b75','Thermal Heat','% heat recovered')}
       </div></div>`:''}
   </div>`;
-}
-
-// ── SAVINGS — CAS ROOM ───────────────────────────────────────────────────────
-
-
-// ── SAVINGS — CAS ROOM ────────────────────────────────────────────────────────
-function renderSavingsCR(sc){
-  const hasEnergy=sc.energy>0;
-  const resources=[];
-  if(sc.aluminium>0) resources.push({pct:sc.aluminium,color:'#a8c5da',label:'Aluminium',sub:'% recovered'});
-  if(sc.steel>0)     resources.push({pct:sc.steel,    color:'#7b9ee8',label:'Steel',    sub:'% recovered'});
-  if(sc.wood>0)      resources.push({pct:sc.wood,     color:'#4ecca3',label:'Wood',     sub:'% recovered'});
-  if(sc.glass>0)     resources.push({pct:sc.glass,    color:'#a8edcc',label:'Glass',    sub:'% recovered'});
-  if(sc.stainlessSteel>0) resources.push({pct:sc.stainlessSteel,color:'#e0b87a',label:'Stainless Steel',sub:'% recovered'});
-
-  const cards=[];
-  if(hasEnergy) cards.push(
-    '<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#9889;</div>' +
-    '<div class="savings-card-title-block"><div class="savings-card-title">Energy Savings</div>' +
-    '<div class="savings-card-desc">Manufacturing energy avoided vs. new production.</div></div></div>' +
-    '<div class="savings-card-body">' + pieItem(sc.energy,'#f7c873','Energy Savings','% vs. new production') + '</div></div>'
-  );
-  if(resources.length>0){
-    const ringsHtml=resources.map((r,i)=>(i>0?'<div class="pie-divider"></div>':'')+pieItem(r.pct,r.color,r.label,r.sub)).join('');
-    cards.push(
-      '<div class="savings-card-new"><div class="savings-card-top"><div class="savings-card-icon">&#9851;</div>' +
-      '<div class="savings-card-title-block"><div class="savings-card-title">Material Recovery</div>' +
-      '<div class="savings-card-desc">Aluminium, steel, wood, glass and stainless steel recovered.</div></div></div>' +
-      '<div class="savings-card-body">' + ringsHtml + '</div></div>'
-    );
-  }
-  const gridClass=cards.length===1?'savings-1col':'savings-2col';
-  return '<div class="savings-grid-outer '+gridClass+' anim anim-d3">'+cards.join('')+'</div>';
 }
 
 // ── ABSOLUTE IMPACT ───────────────────────────────────────────────────────────
@@ -430,27 +388,6 @@ function renderAbsoluteWF(product,sc,eol,m2){
   </div>`;
 }
 
-function renderAbsoluteCR(product,sc,eol,m2){
-  const cards=[];
-  if(eol==='Reuse'){
-    // 100% reuse — full A1-C4 avoided
-    const co2=sc.a1c4_orig*m2;
-    if(co2>0)cards.push(absStatCard('🌿',fmt(co2),'kg CO₂ avoided','Full carbon footprint avoided — product fully reused','#4ecca3',null));
-  }
-  if(!cards.length)return '';
-  return `<div class="abs-section anim anim-d4">
-    <div class="section-label">Project Impact</div>
-    <div class="abs-impact-banner">
-      <div class="abs-impact-banner-icon">&#127881;</div>
-      <div class="abs-impact-banner-text">
-        <strong>Total Impact for ${fmt(m2,0)} m&#178; floor area</strong>
-        <span>${eol==='Reuse'?'Full CO₂ savings — CAS Room fully reused, no new production':'Material recovery savings'}</span>
-      </div>
-    </div>
-    <div class="abs-grid">${cards.join('')}</div>
-  </div>`;
-}
-
 function updateAbsoluteSingle(matKey,product,eol){
   const input=document.getElementById('mlinput-'+matKey);
   const absEl=document.getElementById('mlabs-'+matKey);
@@ -458,7 +395,7 @@ function updateAbsoluteSingle(matKey,product,eol){
   const m2=parseFloat(input.value);
   if(!m2||m2<=0){absEl.innerHTML='';return;}
   const sc=MATERIALS[matKey].data[product].scenarios[eol];
-  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):matKey==='wf'?renderAbsoluteWF(product,sc,eol,m2):renderAbsoluteCR(product,sc,eol,m2);
+  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):renderAbsoluteWF(product,sc,eol,m2);
 }
 
 function updateAbsoluteCompare(matKey,product,eol,side){
@@ -468,7 +405,7 @@ function updateAbsoluteCompare(matKey,product,eol,side){
   const m2=parseFloat(input.value);
   if(!m2||m2<=0){absEl.innerHTML='';return;}
   const sc=MATERIALS[matKey].data[product].scenarios[eol];
-  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):matKey==='wf'?renderAbsoluteWF(product,sc,eol,m2):renderAbsoluteCR(product,sc,eol,m2);
+  absEl.innerHTML=matKey==='cs'?renderAbsoluteCS(product,sc,m2):renderAbsoluteWF(product,sc,eol,m2);
 }
 
 // Legacy alias for PDF export compatibility
@@ -524,7 +461,7 @@ function buildSections(matKey,product,eol,stamp){
 
   if(isReuse){
     const reduction=co2Reduction(sc.a1c4_orig,sc.a1c4_ref);
-    a1c4Html=''; // values shown in donut legend — no duplication
+    a1c4Html=''; // Values shown in donut legend — no need to repeat in cards above
     contextHtml=`
       <div class="co2-donut-wrap">
         <div class="donut-center">
@@ -584,7 +521,7 @@ function buildSections(matKey,product,eol,stamp){
       </div>`;
   }
 
-  const savingsHtml=matKey==='cs'?renderSavingsCS(sc):matKey==='wf'?renderSavingsWF(sc,product):renderSavingsCR(sc);
+  const savingsHtml=matKey==='cs'?renderSavingsCS(sc):renderSavingsWF(sc,product);
   return {a1c4Html,contextHtml,savingsHtml,sc,isReuse,reduction:isReuse?co2Reduction(sc.a1c4_orig,sc.a1c4_ref):0};
 }
 
@@ -686,8 +623,7 @@ function onSelectionChange(matKey){
 const INLINE_CSV = {
   cs: ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,Water Savings,Resource Savings,\nCalcium sulphate,,,,,,Electrcity,Thermal,Water Savings,alpha gypsum,beta gypsum\n,NORTEC,Reuse,14.6,LOOP,3.41,93%,100%,100%,80%,90%\n,NORTEC,Recycling,16.8,,4.1,0%,0%,0%,14%,56%\n,NORTEC,Landfilling,13.1,,3.36,0%,0%,0%,0%,0%\n,,,,,,,,,,\n,,,,,,,,,,\n,,,,,,,,,,\n,FLOOR and more,Reuse,16.7,ADDLIFE,3.41,90%,100%,100%,100%,100%\n,FLOOR and more,Recycling,18.73,,3.75,0%,0%,0%,14%,56%\n,FLOOR and more,Landfilling,17.23,,3.13,0%,0%,0%,0%,0%\n,,,,,,,,,,\n,,,,,,,,,,\n,NORIT,Landfilling,17.23,,3.13,0%,0%,0%,0%,0%",
   wf: ",Boden type normal,EOL,A1-C4(kg co2),Boden type refurbished to,A1-C4(kg co2),Energy savings,,resource savings ,,Energy recovery,\nWooden floors,,,,,,Electrcity,Thermal,Tree Savings,Steel savings,Electrcity,Thermal\n,LIGNA,Reuse,5.14,RELIFE ,1.02,100%,0%,50%,0%,0%,0%\n,LIGNA,Incineration,5.49,,2.28,0%,0%,0%,0%,25%,35%\n,,,,,,,,,,,\n,,,,,,,,,,,\n,,,,,,,,,,,\n,LIGNA ST,Reuse,13.83,RELIFE ST,0.68,100%,0%,50%,17%,0%,0%\n,LIGNA ST,Incineration,17.4,,5.03,0%,0%,0%,0%,25%,35%",
-  cr: "CAS room Type,Scenario  ,A1-C4,Energy savings,Resource Savings,,,,\n,,,,Aluminium,Steel,Wood,Glass,Stainless Steel\n3400x4000,Recyling ,3729.17,0%,40%,50%,40%,50%,50%\n2400x2400,Recyling ,2197.29,0%,40%,50%,40%,50%,50%\n1200x2000,Recyling ,1457.87,0%,40%,50%,40%,50%,50%\n3400x4000,Reuse,3692.24,100%,100%,100%,100%,100%,100%\n2400x2400,Reuse,2175.57,100%,100%,100%,100%,100%,100%\n1200x2000,Reuse,1444.23,100%,100%,100%,100%,100%,100%",
-  cr: "CAS room Type,Scenario  ,A1-C4,Energy savings,Resource Savings,,,,\n,,,,Aluminium,Steel,Wood,Glass,Stainless Steel\n3400x4000,Recyling ,3729.17,0%,40%,50%,40%,50%,50%\n2400x2400,Recyling ,2197.29,0%,40%,50%,40%,50%,50%\n1200x2000,Recyling ,1457.87,0%,40%,50%,40%,50%,50%\n3400x4000,Reuse,3692.24,100%,100%,100%,100%,100%,100%\n2400x2400,Reuse,2175.57,100%,100%,100%,100%,100%,100%\n1200x2000,Reuse,1444.23,100%,100%,100%,100%,100%,100%"
+  cr: ""
 };
 
 // ── LOAD CSV ──────────────────────────────────────────────────────────────────
@@ -709,8 +645,14 @@ function loadCSV(matKey){
   try{
     const text=INLINE_CSV[matKey];
     if(!text)throw new Error('No inline data for '+matKey);
-    m.data=matKey==='cs'?parseCSV_cs(text):matKey==='wf'?parseCSV_wf(text):parseCSV_cr(text);
-    if(Object.keys(m.data).length===0)throw new Error('No rows parsed.');
+    m.data=matKey==='cs'?parseCSV_cs(text):parseCSV_wf(text);
+    if(Object.keys(m.data).length===0){
+      // No data — show coming soon if available, otherwise show no-data
+      const csEl2=m.comingSoon?document.getElementById(m.comingSoon):null;
+      if(csEl2)csEl2.style.display='block';
+      else if(noDataEl)noDataEl.style.display='block';
+      return;
+    }
     populateSelectors(matKey);
     if(noDataEl)noDataEl.style.display='block';
     if(errorEl)errorEl.style.display='none';
@@ -751,7 +693,7 @@ function setLang(lang){
   document.getElementById('btn-en').classList.toggle('active',lang==='en');
   document.getElementById('btn-de').classList.toggle('active',lang==='de');
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[lang][k])el.textContent=I18N[lang][k];});
-  ['cs','wf','cr'].forEach(mk=>{const m=MATERIALS[mk];const p=document.getElementById(m.selProduct).value,e=document.getElementById(m.selEol).value;if(p&&e)onSelectionChange(mk);});
+  ['cs','wf'].forEach(mk=>{const m=MATERIALS[mk];const p=document.getElementById(m.selProduct).value,e=document.getElementById(m.selEol).value;if(p&&e)onSelectionChange(mk);});
   try{localStorage.setItem('bo-lang',lang);}catch(_){}
 }
 (function initLang(){try{const s=localStorage.getItem('bo-lang');if(s&&I18N[s]){_lang=s;setLang(s);}}catch(_){}})();
