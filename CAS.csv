@@ -1,0 +1,8 @@
+﻿CAS room Type,Scenario  ,A1-C4,Energy savings,Resource Savings,,,,
+,,,,Aluminium,Steel,Wood,Glass,Stainless Steel
+3400x4000,Recyling ,3729.17,0%,40%,50%,40%,50%,50%
+2400x2400,Recyling ,2197.29,0%,40%,50%,40%,50%,50%
+1200x2000,Recyling ,1457.87,0%,40%,50%,40%,50%,50%
+3400x4000,Reuse,3692.24,100%,100%,100%,100%,100%,100%
+2400x2400,Reuse,2175.57,100%,100%,100%,100%,100%,100%
+1200x2000,Reuse,1444.23,100%,100%,100%,100%,100%,100%

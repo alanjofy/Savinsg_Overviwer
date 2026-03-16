@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boden Optimizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-left">
+      <div class="eyebrow" data-i18n="eyebrow">Lifecycle Data</div>
+      <h1><em>Boden</em> Optimizer</h1>
+    </div>
+    <div class="header-controls">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="btn-de" onclick="setLang('de')">DE</button>
+      </div>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+        <span id="theme-icon">&#9728;&#65039;</span>
+      </button>
+      <button class="export-btn-header" id="export-btn-header" onclick="exportPDF()" style="display:none">
+        <span>&#128196;</span><span data-i18n="btn-export">Export PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="material-toggle">
+    <button class="toggle-btn active" id="btn-cs" onclick="switchMaterial('calcium_sulphate')">
+      <span class="toggle-icon">&#129704;</span>
+      <span class="toggle-label" data-i18n="mat-cs">Calcium Sulphate Floors</span>
+    </button>
+    <button class="toggle-btn" id="btn-wf" onclick="switchMaterial('wooden_floors')">
+      <span class="toggle-icon">&#129717;</span>
+      <span class="toggle-label" data-i18n="mat-wf">Wooden Floors</span>
+    </button>
+    <button class="toggle-btn" id="btn-cr" onclick="switchMaterial('cas_room')">
+      <span class="toggle-icon">&#127968;</span>
+      <span class="toggle-label" data-i18n="mat-cr">CAS Room</span>
+    </button>
+  </div>
+
+  <!-- CALCIUM SULPHATE -->
+  <div id="panel-calcium_sulphate" class="material-panel">
+    <div class="selector-row">
+      <div class="selector-panel">
+        <div class="select-group">
+          <label data-i18n="label-product">Boden Type</label>
+          <select id="sel-product-cs" onchange="onSelectionChange('cs')">
+            <option value="">&#8212; Select product &#8212;</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label data-i18n="label-eol">EOL Scenario</label>
+          <select id="sel-eol-cs" onchange="onSelectionChange('cs')">
+            <option value="">&#8212; Select EOL scenario &#8212;</option>
+          </select>
+        </div>
+      </div>
+      <button class="compare-btn" id="compare-btn-cs" style="display:none" onclick="toggleCompare('cs')" data-i18n="btn-compare">&#8644; Compare Scenarios</button>
+    </div>
+    <div id="compare-panel-cs" class="compare-selector" style="display:none">
+      <div class="select-group" style="max-width:320px">
+        <label data-i18n="label-compare-eol">Compare with EOL</label>
+        <select id="sel-eol-cs-b" onchange="onCompareChange('cs')">
+          <option value="">&#8212; Select scenario to compare &#8212;</option>
+        </select>
+      </div>
+    </div>
+    <div id="eol-card-area-cs" style="display:none; margin-bottom:28px;"></div>
+    <div class="results-area" id="results-cs"><div id="results-inner-cs"></div></div>
+    <div class="no-data" id="no-data-cs" style="display:none">
+      <span class="big">&#11014;</span>
+      <span data-i18n="no-data">Select a Boden type and EOL scenario above to view the environmental impact analysis.</span>
+    </div>
+    <div class="no-data" id="csv-loading-cs" style="display:none">
+      <span class="big">&#9203;</span> <span data-i18n="loading-cs">Loading calcium sulphate data&#8230;</span>
+    </div>
+    <div class="no-data" id="csv-error-cs" style="display:none"></div>
+  </div>
+
+  <!-- WOODEN FLOORS -->
+  <div id="panel-wooden_floors" class="material-panel" style="display:none">
+    <div class="selector-row">
+      <div class="selector-panel">
+        <div class="select-group">
+          <label data-i18n="label-product">Boden Type</label>
+          <select id="sel-product-wf" onchange="onSelectionChange('wf')">
+            <option value="">&#8212; Select product &#8212;</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label data-i18n="label-eol">EOL Scenario</label>
+          <select id="sel-eol-wf" onchange="onSelectionChange('wf')">
+            <option value="">&#8212; Select EOL scenario &#8212;</option>
+          </select>
+        </div>
+      </div>
+      <button class="compare-btn" id="compare-btn-wf" style="display:none" onclick="toggleCompare('wf')" data-i18n="btn-compare">&#8644; Compare Scenarios</button>
+    </div>
+    <div id="compare-panel-wf" class="compare-selector" style="display:none">
+      <div class="select-group" style="max-width:320px">
+        <label data-i18n="label-compare-eol">Compare with EOL</label>
+        <select id="sel-eol-wf-b" onchange="onCompareChange('wf')">
+          <option value="">&#8212; Select scenario to compare &#8212;</option>
+        </select>
+      </div>
+    </div>
+    <div id="eol-card-area-wf" style="display:none; margin-bottom:28px;"></div>
+    <div class="results-area" id="results-wf"><div id="results-inner-wf"></div></div>
+    <div class="no-data" id="no-data-wf" style="display:none">
+      <span class="big">&#11014;</span>
+      <span data-i18n="no-data">Select a Boden type and EOL scenario above to view the environmental impact analysis.</span>
+    </div>
+    <div class="no-data" id="csv-loading-wf" style="display:none"></div>
+    <div class="no-data" id="csv-error-wf" style="display:none"></div>
+    <div class="no-data" id="coming-soon-wf" style="display:none">
+    </div>
+  </div>
+
+
+  <!-- CAS ROOM -->
+  <div id="panel-cas_room" class="material-panel" style="display:none">
+    <div class="selector-row">
+      <div class="selector-panel">
+        <div class="select-group">
+          <label data-i18n="label-product">Boden Type</label>
+          <select id="sel-product-cr" onchange="onSelectionChange('cr')">
+            <option value="">&#8212; Select product &#8212;</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label data-i18n="label-eol">EOL Scenario</label>
+          <select id="sel-eol-cr" onchange="onSelectionChange('cr')">
+            <option value="">&#8212; Select EOL scenario &#8212;</option>
+          </select>
+        </div>
+      </div>
+      <button class="compare-btn" id="compare-btn-cr" style="display:none" onclick="toggleCompare('cr')" data-i18n="btn-compare">&#8644; Compare Scenarios</button>
+    </div>
+    <div id="compare-panel-cr" class="compare-selector" style="display:none">
+      <div class="select-group" style="max-width:320px">
+        <label data-i18n="label-compare-eol">Compare with EOL</label>
+        <select id="sel-eol-cr-b" onchange="onCompareChange('cr')">
+          <option value="">&#8212; Select scenario to compare &#8212;</option>
+        </select>
+      </div>
+    </div>
+    <div id="eol-card-area-cr" style="display:none; margin-bottom:28px;"></div>
+    <div class="results-area" id="results-cr"><div id="results-inner-cr"></div></div>
+    <div class="no-data" id="no-data-cr" style="display:none">
+      <span class="big">&#11014;</span>
+      <span>Select a CAS Room type and EOL scenario above to view the analysis.</span>
+    </div>
+    <div class="no-data" id="csv-loading-cr" style="display:none"></div>
+    <div class="no-data" id="csv-error-cr" style="display:none"></div>
+  </div>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
