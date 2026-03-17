@@ -793,7 +793,7 @@ function toggleTheme(){
   const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const next=isDark?'light':'dark';
   document.documentElement.setAttribute('data-theme',next);
-  document.getElementById('theme-icon').textContent=next==='dark'?'☀️':'&#x1F319;';
+  document.getElementById('theme-icon').textContent=next==='dark'?'☀️':'🌙';
   try{localStorage.setItem('bo-theme',next);}catch(_){}
 }
 (function initTheme(){
