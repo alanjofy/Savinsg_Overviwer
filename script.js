@@ -797,7 +797,7 @@ function toggleTheme(){
   try{localStorage.setItem('bo-theme',next);}catch(_){}
 }
 (function initTheme(){
-  try{const s=localStorage.getItem('bo-theme');if(s){document.documentElement.setAttribute('data-theme',s);const i=document.getElementById('theme-icon');if(i)i.textContent=s==='dark'?'☀️':'&#x1F319;';}}catch(_){}
+  try{const s=localStorage.getItem('bo-theme');if(s){document.documentElement.setAttribute('data-theme',s);const i=document.getElementById('theme-icon');if(i)i.textContent=s==='dark'?'☀️':'🌙';}}catch(_){}
 })();
 
 // ------------------------------------------------------------
