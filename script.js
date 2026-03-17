@@ -1,5 +1,4 @@
 // -- CONFIG --------------------------------------------------------------------
-const UNSPLASH_KEY = '7clGwldz_Ty9Xzn-UEEEBCJq59R2U__Greh--78Hrpg';
 
 const EPD_BASE = {
   cs: {
