@@ -27,7 +27,7 @@ const MATH_INFO = {
 
 const EOL_INFO = {
   Landfilling: {
-    query:'construction waste landfill site', label:'LANDFILLING', title:'End of the Road',
+    query:'construction waste landfill site', label:'LANDFILLING', title:'End of the Product',
     color:'#e05c5c', fallback:'linear-gradient(160deg,#2a1a1a,#3d2020)',
     bullets:[{icon:'X',text:'No material or energy recovered'},{icon:'!',text:'Worst environmental outcome'}],
   },
@@ -80,16 +80,32 @@ const CR_EOL_INFO = {
     ],
   },
 };
-const _photoCache = {};
+// -- LOCAL PHOTO MAP ----------------------------------------------------------
+// Maps matKey + eol → local image file in same folder
+const LOCAL_PHOTOS = {
+  cs: {
+    Reuse:       'gypsum_reuse.jpg',
+    Recycling:   'gypsum_recycling.webp',
+    Landfilling: 'gypsum_landfilling.jpg',
+  },
+  wf: {
+    Reuse:       'ligna.jpg',
+    Incineration:'ligna_incineration.avif',
+  },
+  cr: {
+    Reuse:       'CAS_reuse.png',
+    Recycling:   'metalrecycling.jpg',
+  },
+};
 
 // -- EOL CARD ------------------------------------------------------------------
-async function showEolCard(matKey, eol) {
+function showEolCard(matKey, eol) {
   const area = document.getElementById('eol-card-area-' + matKey);
   if (!area) return;
   if (!eol) { area.style.display='none'; area.innerHTML=''; return; }
-  const info = (matKey==='cr' && CR_EOL_INFO[eol]) ? CR_EOL_INFO[eol] : EOL_INFO[eol]; if (!info) return;
-  // icons handled per-eol below
-  // For wooden floors Reuse — use the richer wood/carbon bullet list
+  const info = (matKey==='cr' && CR_EOL_INFO[eol]) ? CR_EOL_INFO[eol] : EOL_INFO[eol];
+  if (!info) return;
+
   const activeBullets = (eol==='Reuse' && matKey==='wf' && info.bulletsCarbonWood)
     ? info.bulletsCarbonWood : info.bullets;
   const eolIcons = {
@@ -99,9 +115,16 @@ async function showEolCard(matKey, eol) {
     Landfilling:  ['❌','&#x1F4CD;','⚠️'],
   };
   const iconArr = eolIcons[eol]||[];
+
+  // Pick local photo — fallback to CSS gradient if not mapped
+  const localImg = LOCAL_PHOTOS[matKey] && LOCAL_PHOTOS[matKey][eol];
+  const photoBg = localImg
+    ? `background:${info.fallback};background-image:url('${localImg}');background-size:cover;background-position:center`
+    : `background:${info.fallback}`;
+
   area.innerHTML = `
     <div class="eol-single-card" style="border-color:${info.color};box-shadow:0 0 24px ${info.color}28">
-      <div class="eol-card-photo" id="eol-photo-${matKey}" style="background:${info.fallback}"><div class="eol-photo-overlay"></div></div>
+      <div class="eol-card-photo" id="eol-photo-${matKey}" style="${photoBg}"><div class="eol-photo-overlay"></div></div>
       <div class="eol-card-body">
         <div class="eol-card-label" style="color:${info.color}">${info.label}</div>
         <div class="eol-card-title">${info.title}</div>
@@ -110,23 +133,6 @@ async function showEolCard(matKey, eol) {
       </div>
     </div>`;
   area.style.display = 'block';
-  if (_photoCache[eol]) {
-    const c=_photoCache[eol];
-    const p=document.getElementById('eol-photo-'+matKey); if(p){p.style.backgroundImage=`url(${c.url})`;p.style.backgroundSize='cover';}
-    const cr=document.getElementById('eol-credit-'+matKey); if(cr&&c.credit)cr.innerHTML=c.credit;
-    return;
-  }
-  try {
-    const res=await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(info.query)}&orientation=landscape&client_id=${UNSPLASH_KEY}`);
-    if(!res.ok)throw new Error(res.status);
-    const data=await res.json();
-    const url=data.urls.regular;
-    let credit='';
-    if(data.user){const link=`${data.user.links.html}?utm_source=boden_optimizer&utm_medium=referral`;credit=`Photo: <a href="${link}" target="_blank">${data.user.name}</a> on Unsplash`;}
-    _photoCache[eol]={url,credit};
-    const p=document.getElementById('eol-photo-'+matKey); if(p){p.style.backgroundImage=`url(${url})`;p.style.backgroundSize='cover';}
-    const cr=document.getElementById('eol-credit-'+matKey); if(cr&&credit)cr.innerHTML=credit;
-  } catch(err){console.warn('Unsplash fail:',err.message);}
 }
 
 // -- MATERIAL SWITCH -----------------------------------------------------------
@@ -304,7 +310,7 @@ function fmt(val,dec=1){
     const last3=intPart.slice(-3);
     const rest=intPart.slice(0,-3);
     const groups=[];
-    for(let i=rest.length;i>0;i-=2) groups.unshift(rest.slice(Math.max(0,i-2),i));
+    for(let i=rest.length;i>0;i-=3) groups.unshift(rest.slice(Math.max(0,i-3),i));
     res=groups.join(',') + ',' + last3;
   } else {
     res=intPart;
@@ -804,8 +810,8 @@ function toggleTheme(){
 // LANGUAGE
 // ------------------------------------------------------------
 const I18N={
-  en:{'eyebrow':'Lifecycle Data','mat-cs':'Calcium Sulphate Floors','mat-wf':'Wooden Floors','mat-cr':'CAS Room','label-product':'Boden Type','label-eol':'EOL Scenario','label-compare-eol':'Compare with EOL','sel-product-placeholder':'— Select product —','sel-eol-placeholder':'— Select EOL scenario —','sel-compare-placeholder':'— Select scenario to compare —','no-data':'Select a Boden type and EOL scenario to view the analysis.','loading-cs':'Loading calcium sulphate data…','coming-soon':'Wooden Floors data coming soon.','btn-compare':'⇄ Compare Scenarios','btn-export':'Export PDF'},
-  de:{'eyebrow':'Lebenszyklus-Daten','mat-cs':'Calciumsulfatböden','mat-wf':'Holzböden','mat-cr':'CAS Raum','label-product':'Bodentyp','label-eol':'EOL-Szenario','label-compare-eol':'Vergleich mit EOL','sel-product-placeholder':'— Produkt wählen —','sel-eol-placeholder':'— EOL-Szenario wählen —','sel-compare-placeholder':'— Vergleichsszenario wählen —','no-data':'Wählen Sie Bodentyp und EOL-Szenario.','loading-cs':'Daten werden geladen…','coming-soon':'Holzboden-Daten demnächst verfügbar.','btn-compare':'⇄ Szenarien vergleichen','btn-export':'PDF exportieren'},
+  en:{'eyebrow':'Lifecycle Data','mat-cs':'Calcium Sulphate Floors','mat-wf':'Wooden Floors','mat-cr':'CAS Room','label-product':'Boden Type','label-eol':'EOL Scenario','label-compare-eol':'Compare with EOL','sel-product-placeholder':'— Select product —','sel-eol-placeholder':'— Select EOL scenario —','sel-compare-placeholder':'— Select scenario to compare —','no-data':'Select a Boden type and EOL scenario to view the analysis.','loading-cs':'Loading calcium sulphate data…','coming-soon':'Wooden Floors data coming soon.','btn-compare':'⇄ Compare Scenarios','btn-export':'Export PNG'},
+  de:{'eyebrow':'Lebenszyklus-Daten','mat-cs':'Calciumsulfatböden','mat-wf':'Holzböden','mat-cr':'CAS Raum','label-product':'Bodentyp','label-eol':'EOL-Szenario','label-compare-eol':'Vergleich mit EOL','sel-product-placeholder':'— Produkt wählen —','sel-eol-placeholder':'— EOL-Szenario wählen —','sel-compare-placeholder':'— Vergleichsszenario wählen —','no-data':'Wählen Sie Bodentyp und EOL-Szenario.','loading-cs':'Daten werden geladen…','coming-soon':'Holzboden-Daten demnächst verfügbar.','btn-compare':'⇄ Szenarien vergleichen','btn-export':'PNG exportieren'},
 };
 let _lang='en';
 function setLang(lang){
@@ -872,17 +878,14 @@ function showExportBar(){
 }
 
 async function exportPDF(){
-  const btn=document.getElementById('export-btn-header');
-  if(!btn)return;
-  const orig=btn.innerHTML;
-  btn.innerHTML='<span>&#8987;</span><span>Generating...</span>';
-  btn.style.opacity='0.7'; btn.style.pointerEvents='none';
-
-  // Temporarily hide the export button itself so it doesn't appear in screenshot
-  btn.style.visibility='hidden';
-
+  const btn = document.getElementById('export-btn-header');
+  if(!btn) return;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span>&#8987;</span><span>Capturing...</span>';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+  btn.style.visibility = 'hidden';
   try{
-    // Load html2canvas dynamically if not already loaded
     if(!window.html2canvas){
       await new Promise((resolve,reject)=>{
         const sc=document.createElement('script');
@@ -891,62 +894,25 @@ async function exportPDF(){
         document.head.appendChild(sc);
       });
     }
-
-    const {jsPDF}=window.jspdf;
-
-    // Capture the full container
-    const container=document.querySelector('.container');
-    const canvas=await html2canvas(container,{
-      scale:2,
-      useCORS:true,
-      allowTaint:true,
-      backgroundColor: document.documentElement.getAttribute('data-theme')==='light'?'#f8fafc':'#0d1117',
-      logging:false,
-      windowWidth: container.scrollWidth,
-      height: container.scrollHeight,
-      scrollY: 0
+    const container = document.querySelector('.container');
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const canvas = await html2canvas(container,{
+      scale:2, useCORS:true, allowTaint:true,
+      backgroundColor: isDark ? '#0d1117' : '#f4f6f8',
+      logging:false, windowWidth:container.scrollWidth,
+      height:container.scrollHeight, scrollY:0
     });
-
-    const imgData=canvas.toDataURL('image/png');
-    const imgW=canvas.width;
-    const imgH=canvas.height;
-
-    // A4 dimensions in mm
-    const pdfW=210;
-    const pdfH=Math.round((imgH/imgW)*pdfW);
-
-    // If content is taller than one A4 page, split across pages
-    const pageHeightPx=Math.round((297/pdfW)*imgW); // pixels per A4 page
-    const totalPages=Math.ceil(imgH/pageHeightPx);
-
-    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-
-    for(let page=0;page<totalPages;page++){
-      if(page>0)pdf.addPage();
-      const srcY=page*pageHeightPx;
-      const srcH=Math.min(pageHeightPx, imgH-srcY);
-      const sliceH=Math.round((srcH/imgW)*pdfW);
-
-      // Create a slice canvas for this page
-      const slice=document.createElement('canvas');
-      slice.width=imgW; slice.height=srcH;
-      const ctx=slice.getContext('2d');
-      ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
-      const sliceData=slice.toDataURL('image/png');
-      pdf.addImage(sliceData,'PNG',0,0,pdfW,sliceH);
-    }
-
-    const activeMatKey=document.getElementById('btn-cs').classList.contains('active')?'cs':'wf';
-    const m=MATERIALS[activeMatKey];
-    const product=document.getElementById(m.selProduct).value||'export';
-    const eolA=document.getElementById(m.selEol).value||'';
-    const eolB=_compareActive[activeMatKey]?document.getElementById('sel-eol-'+activeMatKey+'-b').value:'';
-    const filename='Boden_Optimizer_'+product.replace(/\s+/g,'_')+'_'+eolA+(eolB?'_vs_'+eolB:'')+'.pdf';
-
-    pdf.save(filename);
-
+    const activeMatKey = document.getElementById('btn-cs').classList.contains('active') ? 'cs'
+      : document.getElementById('btn-wf').classList.contains('active') ? 'wf' : 'cr';
+    const m = MATERIALS[activeMatKey];
+    const product = (document.getElementById(m.selProduct).value||'export').replace(/\s+/g,'_');
+    const eol = document.getElementById(m.selEol).value||'';
+    const link = document.createElement('a');
+    link.download = 'Savings_Optimizer_'+product+(eol?'_'+eol:'')+'.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   }catch(err){
-    console.error('PDF failed:',err);
+    console.error('PNG export failed:',err);
     alert('Export failed: '+err.message);
   }finally{
     btn.innerHTML=orig;
